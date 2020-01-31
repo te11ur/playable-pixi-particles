@@ -1,16 +1,14 @@
-import {Point} from "pixi.js";
-
-export interface BasicPoint
+export class BasicPoint
 {
-	x: number;
-	y: number;
+	x;
+	y;
 }
 
-export interface Segment
+export class Segment
 {
-	p1: BasicPoint;
-	p2: BasicPoint;
-	l: number;
+	p1;
+	p2;
+	l;
 }
 
 /**
@@ -21,32 +19,32 @@ export class PolygonalChain
 	/**
 	 * List of segment objects in the chain.
 	 */
-	private segments:Segment[];
+	segments;
 	/**
 	 * Total length of all segments of the chain.
 	 */
-	private totalLength:number;
+	totalLength;
 	/**
 	 * Total length of segments up to and including the segment of the same index.
 	 * Used for weighted random selection of segment.
 	 */
-	private countingLengths:number[];
-	
+	countingLengths;
+
 	/**
 	 * @param data Point data for polygon chains. Either a list of points for a single chain, or a list of chains.
 	 */
-	constructor(data:BasicPoint[]|BasicPoint[][])
+	constructor(data)
 	{
 		this.segments = [];
 		this.countingLengths = [];
 		this.totalLength = 0;
 		this.init(data);
 	}
-	
+
 	/**
 	 * @param data Point data for polygon chains. Either a list of points for a single chain, or a list of chains.
 	 */
-	private init(data:BasicPoint[]|BasicPoint[][])
+	init(data)
 	{
 		// if data is not present, set up a segment of length 0
 		if (!data || !data.length)
@@ -61,11 +59,11 @@ export class PolygonalChain
 				for (let i = 0; i < data.length; ++i)
 				{
 					// loop through the chain, connecting points
-					const chain = data[i] as BasicPoint[];
-					let prevPoint = chain[0] as BasicPoint;
+					const chain = data[i];
+					let prevPoint = chain[0];
 					for (let j = 1; j < chain.length; ++j)
 					{
-						const second = chain[j] as BasicPoint;
+						const second = chain[j];
 						this.segments.push({p1: prevPoint, p2: second, l:0});
 						prevPoint = second;
 					}
@@ -73,11 +71,11 @@ export class PolygonalChain
 			}
 			else
 			{
-				let prevPoint = data[0] as BasicPoint;
+				let prevPoint = data[0];
 				// list of points
 				for (let i = 1; i < data.length; ++i)
 				{
-					const second = data[i] as BasicPoint;
+					const second = data[i];
 					this.segments.push({p1: prevPoint, p2: second, l:0});
 					prevPoint = second;
 				}
@@ -95,17 +93,17 @@ export class PolygonalChain
 			this.countingLengths.push(this.totalLength);
 		}
 	}
-	
+
 	/**
 	 * Gets a random point in the chain.
 	 * @param out The point to store the selected position in.
 	 */
-	public getRandomPoint(out:Point)
+	getRandomPoint(out)
 	{
 		// select a random spot in the length of the chain
 		const rand = Math.random() * this.totalLength;
-		let chosenSeg:Segment;
-		let lerp:number;
+		let chosenSeg;
+		let lerp;
 		// if only one segment, it wins
 		if (this.segments.length === 1)
 		{

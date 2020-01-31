@@ -1,7 +1,7 @@
-import {ParticleUtils} from "./ParticleUtils";
+import {Point} from "../pixi.js/packages/math/src/Point";
+
 import {Particle} from "./Particle";
-import {Emitter} from "./Emitter";
-import {Point, Texture} from "pixi.js";
+import {rotatePoint, verbose} from "./ParticleUtils";
 
 /**
  * A helper point for math things.
@@ -54,13 +54,14 @@ const WHITELISTER = new RegExp(
  * @param pathString The string to parse.
  * @return The path function - takes x, outputs y.
  */
-const parsePath = function(pathString: string)
+const parsePath = function(pathString)
 {
 	let matches = pathString.match(WHITELISTER);
 	for(let i = matches.length - 1; i >= 0; --i)
 	{
-		if(MATH_FUNCS.indexOf(matches[i]) >= 0)
+		if(MATH_FUNCS.indexOf(matches[i]) >= 0){
 			matches[i] = "Math." + matches[i];
+		}
 	}
 	pathString = matches.join("");
 	return new Function("x", "return "+ pathString + ";");
@@ -90,25 +91,25 @@ export class PathParticle extends Particle
 	/**
 	 * The function representing the path the particle should take.
 	 */
-	public path: Function;
+	path;
 	/**
 	 * The initial rotation in degrees of the particle, because the direction of the path
 	 * is based on that.
 	 */
-	public initialRotation: number;
+	initialRotation;
 	/**
 	 * The initial position of the particle, as all path movement is added to that.
 	 */
-	public initialPosition: Point;
+	initialPosition;
 	/**
 	 * Total single directional movement, due to speed.
 	 */
-	public movement: number;
+	movement;
 	
 	/**
 	 * @param {PIXI.particles.Emitter} emitter The emitter that controls this PathParticle.
 	 */
-	constructor(emitter: Emitter)
+	constructor(emitter)
 	{
 		super(emitter);
 		this.path = null;
@@ -121,7 +122,7 @@ export class PathParticle extends Particle
 	 * Initializes the particle for use, based on the properties that have to
 	 * have been set already on the particle.
 	 */
-	public init()
+	init()
 	{
 		//get initial rotation before it is converted to radians
 		this.initialRotation = this.rotation;
@@ -143,7 +144,7 @@ export class PathParticle extends Particle
 	 * Updates the particle.
 	 * @param delta Time elapsed since the previous frame, in __seconds__.
 	 */
-	public update(delta: number): number
+	update(delta)
 	{
 		const lerp = this.Particle_update(delta);
 		//if the particle died during the update, then don't bother
@@ -155,7 +156,7 @@ export class PathParticle extends Particle
 			//set up the helper point for rotation
 			helperPoint.x = this.movement;
 			helperPoint.y = this.path(this.movement);
-			ParticleUtils.rotatePoint(this.initialRotation, helperPoint);
+			rotatePoint(this.initialRotation, helperPoint);
 			this.position.x = this.initialPosition.x + helperPoint.x;
 			this.position.y = this.initialPosition.y + helperPoint.y;
 		}
@@ -165,7 +166,7 @@ export class PathParticle extends Particle
 	/**
 	 * Destroys the particle, removing references and preventing future use.
 	 */
-	public destroy()
+	destroy()
 	{
 		this.Particle_destroy();
 		this.path = this.initialPosition = null;
@@ -179,7 +180,7 @@ export class PathParticle extends Particle
 	 *            Textures via Texture.fromImage().
 	 * @return The art, after any needed modifications.
 	 */
-	public static parseArt(art: (Texture|string)[]):Texture[]
+	static parseArt(art)
 	{
 		return Particle.parseArt(art);
 	}
@@ -191,9 +192,9 @@ export class PathParticle extends Particle
 	 * @param extraData The extra data from the particle config.
 	 * @return The parsed extra data.
 	 */
-	public static parseData(extraData: {path:string})
+	static parseData(extraData)
 	{
-		let output: any = {};
+		let output = {};
 		if(extraData && extraData.path)
 		{
 			try
@@ -202,14 +203,14 @@ export class PathParticle extends Particle
 			}
 			catch(e)
 			{
-				if(ParticleUtils.verbose)
+				if(verbose)
 					console.error("PathParticle: error in parsing path expression");
 				output.path = null;
 			}
 		}
 		else
 		{
-			if(ParticleUtils.verbose)
+			if(verbose)
 				console.error("PathParticle requires a path string in extraData!");
 			output.path = null;
 		}

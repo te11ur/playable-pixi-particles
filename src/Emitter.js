@@ -1,29 +1,24 @@
-import {ParticleUtils, Color, SimpleEase} from "./ParticleUtils";
+import {Ticker} from "../pixi.js/packages/ticker/src/Ticker";
+import {Circle} from "../pixi.js/packages/math/src/shapes/Circle";
+import {Rectangle} from "../pixi.js/packages/math/src/shapes/Rectangle";
+import {Point} from "../pixi.js/packages/math/src/Point";
+import {Container} from "../pixi.js/packages/display/src/Container";
+import {settings} from "../pixi.js/packages/settings/src/settings";
+
 import {Particle} from "./Particle";
 import {PropertyNode} from "./PropertyNode";
 import {PolygonalChain} from "./PolygonalChain";
 import {EmitterConfig, OldEmitterConfig} from "./EmitterConfig";
-import {Point, Circle, Rectangle, Container, settings} from "pixi.js";
-import * as pixi from "pixi.js";
+import {generateEase, getBlendMode, rotatePoint} from "./ParticleUtils";
 // get the shared ticker, in V4 and V5 friendly methods
 /**
  * @hidden
  */
-let ticker: pixi.ticker.Ticker;
-// to avoid Rollup transforming our import, save pixi namespace in a variable
-const pixiNS = pixi;
-if (parseInt(/^(\d+)\./.exec(pixi.VERSION)[1]) < 5)
-{
-	ticker = pixiNS.ticker.shared;
-}
-else
-{
-	ticker = (pixiNS as any).Ticker.shared;
-}
+const ticker = Ticker.shared;
 
-export interface ParticleConstructor
+export class ParticleConstructor
 {
-	new (emitter:Emitter):Particle;
+	new (emitter);
 }
 
 /**
@@ -40,126 +35,126 @@ export class Emitter
 	 * The constructor used to create new particles. The default is
 	 * the built in particle class.
 	 */
-	protected _particleConstructor: typeof Particle;
+	_particleConstructor;
 	//properties for individual particles
 	/**
 	 * An array of PIXI Texture objects.
 	 */
-	public particleImages: any[];
+	particleImages;
 	/**
 	 * The first node in the list of alpha values for all particles.
 	 */
-	public startAlpha: PropertyNode<number>;
+	startAlpha;
 	/**
 	 * The first node in the list of speed values of all particles.
 	 */
-	public startSpeed: PropertyNode<number>;
+	startSpeed;
 	/**
 	 * A minimum multiplier for the speed of a particle at all stages of its life. A value between
 	 * minimumSpeedMultiplier and 1 is randomly generated for each particle.
 	 */
-	public minimumSpeedMultiplier: number;
+	minimumSpeedMultiplier;
 	/**
 	 * Acceleration to apply to particles. Using this disables
 	 * any interpolation of particle speed. If the particles do
 	 * not have a rotation speed, then they will be rotated to
 	 * match the direction of travel.
 	 */
-	public acceleration: Point;
+	acceleration;
 	/**
 	 * The maximum speed allowed for accelerating particles. Negative values, values of 0 or NaN
 	 * will disable the maximum speed.
 	 */
-	public maxSpeed: number;
+	maxSpeed;
 	/**
 	 * The first node in the list of scale values of all particles.
 	 */
-	public startScale: PropertyNode<number>;
+	startScale;
 	/**
 	 * A minimum multiplier for the scale of a particle at all stages of its life. A value between
 	 * minimumScaleMultiplier and 1 is randomly generated for each particle.
 	 */
-	public minimumScaleMultiplier: number;
+	minimumScaleMultiplier;
 	/**
 	 * The first node in the list of  color values of all particles, as red, green, and blue
 	 * uints from 0-255.
 	 */
-	public startColor: PropertyNode<Color>;
+	startColor;
 	/**
 	 * The minimum lifetime for a particle, in seconds.
 	 */
-	public minLifetime: number;
+	minLifetime;
 	/**
 	 * The maximum lifetime for a particle, in seconds.
 	 */
-	public maxLifetime: number;
+	maxLifetime;
 	/**
 	 * The minimum start rotation for a particle, in degrees. This value
 	 * is ignored if the spawn type is "burst" or "arc".
 	 */
-	public minStartRotation: number;
+	minStartRotation;
 	/**
 	 * The maximum start rotation for a particle, in degrees. This value
 	 * is ignored if the spawn type is "burst" or "arc".
 	 */
-	public maxStartRotation: number;
+	maxStartRotation;
 	/**
 	 * If no particle rotation should occur. Starting rotation will still
 	 * affect the direction in which particles move. If the rotation speed
 	 * is set, then this will be ignored.
 	 */
-	public noRotation: boolean;
+	noRotation;
 	/**
 	 * The minimum rotation speed for a particle, in degrees per second.
 	 * This only visually spins the particle, it does not change direction
 	 * of movement.
 	 */
-	public minRotationSpeed: number;
+	minRotationSpeed;
 	/**
 	 * The maximum rotation speed for a particle, in degrees per second.
 	 * This only visually spins the particle, it does not change direction
 	 * of movement.
 	 */
-	public maxRotationSpeed: number;
+	maxRotationSpeed;
 	/**
 	* The Acceleration of rotation (angular acceleration) for a particle, in degrees per second.
 	*/
-	public rotationAcceleration: number;
+	rotationAcceleration;
 	/**
 	 * The blend mode for all particles, as named by PIXI.blendModes.
 	 */
-	public particleBlendMode: number;
+	particleBlendMode;
 	/**
 	 * An easing function for nonlinear interpolation of values. Accepts a single
 	 * parameter of time as a value from 0-1, inclusive. Expected outputs are values
 	 * from 0-1, inclusive.
 	 */
-	public customEase: SimpleEase;
+	customEase;
 	/**
 	 *	Extra data for use in custom particles. The emitter doesn't look inside, but
 	 *	passes it on to the particle to use in init().
 	 */
-	public extraData: any;
+	extraData;
 	//properties for spawning particles
 	/**
 	 * Time between particle spawns in seconds.
 	 */
-	protected _frequency: number;
+	 _frequency;
 	/**
 	 * Chance that a particle will be spawned on each opportunity to spawn one.
 	 * 0 is 0%, 1 is 100%.
 	 */
-	public spawnChance: number;
+	spawnChance;
 	/**
 	 * Maximum number of particles to keep alive at a time. If this limit
 	 * is reached, no more particles will spawn until some have died.
 	 */
-	public maxParticles: number;
+	maxParticles;
 	/**
 	 * The amount of time in seconds to emit for before setting emit to false.
 	 * A value of -1 is an unlimited amount of time.
 	 */
-	public emitterLifetime: number;
+	emitterLifetime;
 	/**
 	 * Position at which to spawn particles, relative to the emitter's owner's origin.
 	 * For example, the flames of a rocket travelling right might have a spawnPos
@@ -167,146 +162,146 @@ export class Emitter
 	 * to spawn at the rear of the rocket.
 	 * To change this, use updateSpawnPos().
 	 */
-	public spawnPos: Point;
+	spawnPos;
 	/**
 	 * How the particles will be spawned. Valid types are "point", "rectangle",
 	 * "circle", "burst", "ring".
 	 */
-	public spawnType: string;
+	spawnType;
 	/**
 	 * A reference to the emitter function specific to the spawn type.
 	 */
-	protected _spawnFunc: (p: Particle, emitPosX: number, emitPosY: number, i?: number) => void;
+	_spawnFunc;
 	/**
 	 * A rectangle relative to spawnPos to spawn particles inside if the spawn type is "rect".
 	 */
-	public spawnRect: Rectangle;
+	spawnRect;
 	/**
 	 * A polygon relative to spawnPos to spawn particles on the chain if the spawn type is "polygonalChain".
 	 */
-	public spawnPolygonalChain: PolygonalChain;
+	spawnPolygonalChain;
 	/**
 	 * A circle relative to spawnPos to spawn particles inside if the spawn type is "circle".
 	 */
-	public spawnCircle: Circle & {minRadius: number};
+	spawnCircle;
 	/**
 	 * Number of particles to spawn time that the frequency allows for particles to spawn.
 	 */
-	public particlesPerWave: number;
+	particlesPerWave;
 	/**
 	 * Spacing between particles in a burst. 0 gives a random angle for each particle.
 	 */
-	public particleSpacing: number;
+	particleSpacing;
 	/**
 	 * Angle at which to start spawning particles in a burst.
 	 */
-	public angleStart: number;
+	angleStart;
 	/**
 	 * Rotation of the emitter or emitter's owner in degrees. This is added to
 	 * the calculated spawn angle.
 	 * To change this, use rotate().
 	 */
-	protected rotation: number;
+	rotation;
 	/**
 	 * The world position of the emitter's owner, to add spawnPos to when
 	 * spawning particles. To change this, use updateOwnerPos().
 	 */
-	protected ownerPos: Point;
+	ownerPos;
 	/**
 	 * The origin + spawnPos in the previous update, so that the spawn position
 	 * can be interpolated to space out particles better.
 	 */
-	protected _prevEmitterPos: Point;
+	_prevEmitterPos;
 	/**
 	 * If _prevEmitterPos is valid, to prevent interpolation on the first update
 	 */
-	protected _prevPosIsValid: boolean;
+	_prevPosIsValid;
 	/**
 	 * If either ownerPos or spawnPos has changed since the previous update.
 	 */
-	protected _posChanged: boolean;
+	_posChanged;
 	/**
 	 * The container to add particles to.
 	 */
-	protected _parent: Container;
+	_parent;
 	/**
 	 * If particles should be added at the back of the display list instead of the front.
 	 */
-	public addAtBack: boolean;
+	addAtBack;
 	/**
 	 * The current number of active particles.
 	 */
-	public particleCount: number;
+	particleCount;
 	/**
 	 * If particles should be emitted during update() calls. Setting this to false
 	 * stops new particles from being created, but allows existing ones to die out.
 	 */
-	protected _emit: boolean;
+	_emit;
 	/**
 	 * The timer for when to spawn particles in seconds, where numbers less
 	 * than 0 mean that particles should be spawned.
 	 */
-	protected _spawnTimer: number;
+	_spawnTimer;
 	/**
 	 * The life of the emitter in seconds.
 	 */
-	protected _emitterLife: number;
+	_emitterLife;
 	/**
 	 * The particles that are active and on the display list. This is the first particle in a
 	 * linked list.
 	 */
-	protected _activeParticlesFirst: Particle;
+	_activeParticlesFirst;
 	/**
 	 * The particles that are active and on the display list. This is the last particle in a
 	 * linked list.
 	 */
-	protected _activeParticlesLast: Particle;
+	_activeParticlesLast;
 	/**
 	 * The particles that are not currently being used. This is the first particle in a
 	 * linked list.
 	 */
-	protected _poolFirst: Particle;
+	_poolFirst;
 	/**
 	 * The original config object that this emitter was initialized with.
 	 */
-	protected _origConfig: any;
+	_origConfig;
 	/**
 	 * The original particle image data that this emitter was initialized with.
 	 */
-	protected _origArt: any;
+	_origArt;
 	/**
 	 * If the update function is called automatically from the shared ticker.
 	 * Setting this to false requires calling the update function manually.
 	 */
-	protected _autoUpdate: boolean;
+	_autoUpdate;
     /**
 	 * A number keeping index of currently applied image. Used to emit arts in order.
 	 */
-	protected _currentImageIndex: number = -1;
+	_currentImageIndex = -1;
 	/**
 	 * If the emitter should destroy itself when all particles have died out. This is set by
 	 * playOnceAndDestroy();
 	 */
-	protected _destroyWhenComplete: boolean;
+	_destroyWhenComplete;
 	/**
 	 * A callback for when all particles have died out. This is set by
 	 * playOnceAndDestroy() or playOnce();
 	 */
-	protected _completeCallback: () => void;
+	_completeCallback;
 
 	/**
-	 * @param particleParent The container to add the particles to.
+	 * @param particleParent {Container} The container to add the particles to.
 	 * @param particleImages A texture or array of textures to use
 	 *                       for the particles. Strings will be turned
 	 *                       into textures via Texture.fromImage().
-	 * @param config A configuration object containing settings for the emitter.
+	 * @param config { EmitterConfig|OldEmitterConfig} A configuration object containing settings for the emitter.
 	 * @param config.emit If config.emit is explicitly passed as false, the
 	 *                    Emitter will start disabled.
 	 * @param config.autoUpdate If config.autoUpdate is explicitly passed as
 	 *                          true, the Emitter will automatically call
 	 *                          update via the PIXI shared ticker.
 	 */
-	constructor(particleParent: Container, particleImages: any, config: EmitterConfig|OldEmitterConfig)
+	constructor(particleParent, particleImages, config)
 	{
 		this._particleConstructor = Particle;
 		//properties for individual particles
@@ -385,8 +380,8 @@ export class Emitter
 	 * This is particularly useful ensuring that each art shows up once, in case you need to emit a body in an order.
 	 * For example: dragon - [Head, body1, body2, ..., tail]
 	 */
-	public get orderedArt() { return this._currentImageIndex !== -1; }
-	public set orderedArt(value) {
+	get orderedArt() { return this._currentImageIndex !== -1; }
+	set orderedArt(value) {
 		this._currentImageIndex = value ? 0 : -1;
 	}
 
@@ -394,8 +389,8 @@ export class Emitter
 	 * Time between particle spawns in seconds. If this value is not a number greater than 0,
 	 * it will be set to 1 (particle per second) to prevent infinite loops.
 	 */
-	public get frequency() { return this._frequency; }
-	public set frequency(value)
+	get frequency() { return this._frequency; }
+	set frequency(value)
 	{
 		//do some error checking to prevent infinite loops
 		if(typeof value == "number" && value > 0)
@@ -408,8 +403,8 @@ export class Emitter
 	 * the built in Particle class. Setting this will dump any active or
 	 * pooled particles, if the emitter has already been used.
 	 */
-	public get particleConstructor() { return this._particleConstructor; }
-	public set particleConstructor(value)
+	get particleConstructor() { return this._particleConstructor; }
+	set particleConstructor(value)
 	{
 		if(value != this._particleConstructor)
 		{
@@ -431,8 +426,8 @@ export class Emitter
 	/**
 	* The container to add particles to. Settings this will dump any active particles.
 	*/
-	public get parent() { return this._parent; }
-	public set parent(value)
+	get parent() { return this._parent; }
+	set parent(value)
 	{
 		this.cleanup();
 		this._parent = value;
@@ -443,7 +438,7 @@ export class Emitter
 	 * @param art A texture or array of textures to use for the particles.
 	 * @param config A configuration object containing settings for the emitter.
 	 */
-	public init(art: any, config: EmitterConfig|OldEmitterConfig)
+	init(art, config)
 	{
 		if(!art || !config)
 			return;
@@ -541,12 +536,12 @@ export class Emitter
 		this.minLifetime = config.lifetime.min;
 		this.maxLifetime = config.lifetime.max;
 		//get the blend mode
-		this.particleBlendMode = ParticleUtils.getBlendMode(config.blendMode);
+		this.particleBlendMode = getBlendMode(config.blendMode);
 		//use the custom ease if provided
 		if (config.ease)
 		{
 			this.customEase = typeof config.ease == "function" ?
-				config.ease : ParticleUtils.generateEase(config.ease);
+				config.ease : generateEase(config.ease);
 		}
 		else
 			this.customEase = null;
@@ -599,7 +594,7 @@ export class Emitter
 	 * @param art A texture or array of textures to use for the particles.
 	 * @param config A configuration object containing settings for the emitter.
 	 */
-	protected initAdditional(art: any, config: EmitterConfig|OldEmitterConfig)
+	initAdditional(art, config)
 	{
 	}
 
@@ -608,7 +603,7 @@ export class Emitter
 	 * Place for override and add new kind of spawn type
 	 * @param config A configuration object containing settings for the emitter.
 	 */
-	protected parseSpawnType(config: EmitterConfig|OldEmitterConfig) {
+	parseSpawnType(config) {
 		let spawnCircle;
 
 		switch(config.spawnType)
@@ -659,7 +654,7 @@ export class Emitter
 	 * @param particle The particle to recycle.
 	 * @internal
 	 */
-	public recycle(particle: Particle)
+	recycle(particle)
 	{
 		if(particle.next)
 			particle.next.prev = particle.prev;
@@ -684,14 +679,14 @@ export class Emitter
 	 * Sets the rotation of the emitter to a new value.
 	 * @param newRot The new rotation, in degrees.
 	 */
-	public rotate(newRot: number)
+	rotate(newRot)
 	{
 		if (this.rotation == newRot) return;
 		//caclulate the difference in rotation for rotating spawnPos
 		let diff = newRot - this.rotation;
 		this.rotation = newRot;
 		//rotate spawnPos
-		ParticleUtils.rotatePoint(diff, this.spawnPos);
+		rotatePoint(diff, this.spawnPos);
 		//mark the position as having changed
 		this._posChanged = true;
 	}
@@ -701,7 +696,7 @@ export class Emitter
 	 * @param x The new x value of the spawn position for the emitter.
 	 * @param y The new y value of the spawn position for the emitter.
 	 */
-	public updateSpawnPos(x: number, y: number)
+	updateSpawnPos(x, y)
 	{
 		this._posChanged = true;
 		this.spawnPos.x = x;
@@ -714,7 +709,7 @@ export class Emitter
 	 * @param x The new x value of the emitter's owner.
 	 * @param y The new y value of the emitter's owner.
 	 */
-	public updateOwnerPos(x: number, y: number)
+	updateOwnerPos(x, y)
 	{
 		this._posChanged = true;
 		this.ownerPos.x = x;
@@ -726,7 +721,7 @@ export class Emitter
 	 * This should be used if you made a major position change of your emitter's owner
 	 * that was not normal movement.
 	 */
-	public resetPositionTracking()
+	resetPositionTracking()
 	{
 		this._prevPosIsValid = false;
 	}
@@ -735,8 +730,8 @@ export class Emitter
 	 * If particles should be emitted during update() calls. Setting this to false
 	 * stops new particles from being created, but allows existing ones to die out.
 	 */
-	public get emit() { return this._emit; };
-	public set emit(value)
+	get emit() { return this._emit; };
+	set emit(value)
 	{
 		this._emit = !!value;
 		this._emitterLife = this.emitterLifetime;
@@ -746,8 +741,8 @@ export class Emitter
 	 * If the update function is called automatically from the shared ticker.
 	 * Setting this to false requires calling the update function manually.
 	 */
-	public get autoUpdate() { return this._autoUpdate; }
-	public set autoUpdate(value)
+	get autoUpdate() { return this._autoUpdate; }
+	set autoUpdate(value)
 	{
 		if (this._autoUpdate && !value)
 		{
@@ -765,7 +760,7 @@ export class Emitter
 	 * when particle emission is complete.
 	 * @param callback Callback for when emission is complete (all particles have died off)
 	 */
-	public playOnceAndDestroy(callback?: () => void)
+	playOnceAndDestroy(callback)
 	{
 		this.autoUpdate = true;
 		this.emit = true;
@@ -777,7 +772,7 @@ export class Emitter
 	 * Starts emitting particles and optionally calls a callback when particle emission is complete.
 	 * @param callback Callback for when emission is complete (all particles have died off)
 	 */
-	public playOnce(callback?: () => void)
+	playOnce(callback)
 	{
 		this.emit = true;
 		this._completeCallback = callback;
@@ -787,7 +782,7 @@ export class Emitter
 	 * Updates all particles spawned by this emitter and emits new ones.
 	 * @param delta Time elapsed since the previous frame, in __seconds__.
 	 */
-	public update(delta: number)
+	update(delta)
 	{
 		if (this._autoUpdate)
 		{
@@ -1026,7 +1021,7 @@ export class Emitter
 	 * Using on classes that extend from Emitter
 	 * @param p The particle
 	 */
-	protected applyAdditionalProperties(p: Particle) {
+	applyAdditionalProperties(p) {
 	}
 
 	/**
@@ -1036,7 +1031,7 @@ export class Emitter
 	 * @param emitPosY The emitter's y position
 	 * @param i The particle number in the current wave. Not used for this function.
 	 */
-	protected _spawnPoint(p: Particle, emitPosX: number, emitPosY: number)
+	_spawnPoint(p, emitPosX, emitPosY)
 	{
 		//set the initial rotation/direction of the particle based on
 		//starting particle angle and rotation of emitter
@@ -1056,7 +1051,7 @@ export class Emitter
 	 * @param emitPosY The emitter's y position
 	 * @param i The particle number in the current wave. Not used for this function.
 	 */
-	protected _spawnRect(p: Particle, emitPosX: number, emitPosY: number)
+	_spawnRect(p, emitPosX, emitPosY)
 	{
 		//set the initial rotation/direction of the particle based on starting
 		//particle angle and rotation of emitter
@@ -1067,8 +1062,9 @@ export class Emitter
 		//place the particle at a random point in the rectangle
 		helperPoint.x = Math.random() * this.spawnRect.width + this.spawnRect.x;
 		helperPoint.y = Math.random() * this.spawnRect.height + this.spawnRect.y;
-		if(this.rotation !== 0)
-			ParticleUtils.rotatePoint(this.rotation, helperPoint);
+		if(this.rotation !== 0){
+			rotatePoint(this.rotation, helperPoint);
+		}
 		p.position.x = emitPosX + helperPoint.x;
 		p.position.y = emitPosY + helperPoint.y;
 	}
@@ -1080,7 +1076,7 @@ export class Emitter
 	 * @param emitPosY The emitter's y position
 	 * @param i The particle number in the current wave. Not used for this function.
 	 */
-	protected _spawnCircle(p: Particle, emitPosX: number, emitPosY: number)
+	_spawnCircle(p, emitPosX, emitPosY)
 	{
 		//set the initial rotation/direction of the particle based on starting
 		//particle angle and rotation of emitter
@@ -1093,13 +1089,14 @@ export class Emitter
 		helperPoint.x = Math.random() * this.spawnCircle.radius;
 		helperPoint.y = 0;
 		//rotate the point to a random angle in the circle
-		ParticleUtils.rotatePoint(Math.random() * 360, helperPoint);
+		rotatePoint(Math.random() * 360, helperPoint);
 		//offset by the circle's center
 		helperPoint.x += this.spawnCircle.x;
 		helperPoint.y += this.spawnCircle.y;
 		//rotate the point by the emitter's rotation
-		if(this.rotation !== 0)
-			ParticleUtils.rotatePoint(this.rotation, helperPoint);
+		if(this.rotation !== 0){
+			rotatePoint(this.rotation, helperPoint);
+		}
 		//set the position, offset by the emitter's position
 		p.position.x = emitPosX + helperPoint.x;
 		p.position.y = emitPosY + helperPoint.y;
@@ -1112,7 +1109,7 @@ export class Emitter
 	 * @param emitPosY The emitter's y position
 	 * @param i The particle number in the current wave. Not used for this function.
 	 */
-	protected _spawnRing(p: Particle, emitPosX: number, emitPosY: number)
+	_spawnRing(p, emitPosX, emitPosY)
 	{
 		let spawnCircle = this.spawnCircle;
 		//set the initial rotation/direction of the particle based on starting
@@ -1139,8 +1136,9 @@ export class Emitter
 		helperPoint.x += this.spawnCircle.x;
 		helperPoint.y += this.spawnCircle.y;
 		//rotate the point by the emitter's rotation
-		if(this.rotation !== 0)
-			ParticleUtils.rotatePoint(this.rotation, helperPoint);
+		if(this.rotation !== 0){
+			rotatePoint(this.rotation, helperPoint);
+		}
 		//set the position, offset by the emitter's position
 		p.position.x = emitPosX + helperPoint.x;
 		p.position.y = emitPosY + helperPoint.y;
@@ -1153,7 +1151,7 @@ export class Emitter
 	 * @param emitPosY The emitter's y position
 	 * @param i The particle number in the current wave. Not used for this function.
 	 */
-	protected _spawnPolygonalChain(p: Particle, emitPosX: number, emitPosY: number)
+	_spawnPolygonalChain(p, emitPosX, emitPosY)
 	{
 		//set the initial rotation/direction of the particle based on starting
 		//particle angle and rotation of emitter
@@ -1165,8 +1163,9 @@ export class Emitter
 		// get random point on the polygon chain
 		this.spawnPolygonalChain.getRandomPoint(helperPoint);
 		//rotate the point by the emitter's rotation
-		if(this.rotation !== 0)
-			ParticleUtils.rotatePoint(this.rotation, helperPoint);
+		if(this.rotation !== 0){
+			rotatePoint(this.rotation, helperPoint);
+		}
 		//set the position, offset by the emitter's position
 		p.position.x = emitPosX + helperPoint.x;
 		p.position.y = emitPosY + helperPoint.y;
@@ -1179,7 +1178,7 @@ export class Emitter
 	 * @param emitPosY The emitter's y position
 	 * @param i The particle number in the current wave.
 	 */
-	protected _spawnBurst(p: Particle, emitPosX: number, emitPosY: number, i: number)
+	_spawnBurst(p, emitPosX, emitPosY, i)
 	{
 		//set the initial rotation/direction of the particle based on spawn
 		//angle and rotation of emitter
@@ -1195,7 +1194,7 @@ export class Emitter
 	/**
 	 * Kills all active particles immediately.
 	 */
-	public cleanup()
+	cleanup()
 	{
 		let particle, next;
 		for (particle = this._activeParticlesFirst; particle; particle = next)
@@ -1212,7 +1211,7 @@ export class Emitter
 	/**
 	 * Destroys the emitter and all of its particles.
 	 */
-	public destroy()
+	destroy()
 	{
 		//make sure we aren't still listening to any tickers
 		this.autoUpdate = false;

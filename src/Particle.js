@@ -1,7 +1,17 @@
-import {Emitter} from "./Emitter";
-import {ParticleUtils, SimpleEase, Color, GetTextureFromString} from "./ParticleUtils";
+import {Texture} from "../pixi.js/packages/core/src/textures/Texture";
+import {Point} from "../pixi.js/packages/math/src/Point";
+import {Sprite} from "../pixi.js/packages/sprite/src/Sprite";
+
+import {
+	combineRGBComponents,
+	DEG_TO_RADS,
+	GetTextureFromString,
+	normalize,
+	rotatePoint,
+	scaleBy,
+	length
+} from "./ParticleUtils";
 import {PropertyList} from "./PropertyList";
-import {Sprite, Point, Texture} from "pixi.js";
 
 /**
  * An individual particle image. You shouldn't have to deal with these.
@@ -11,81 +21,81 @@ export class Particle extends Sprite
 	/**
 	 * The emitter that controls this particle.
 	 */
-	public emitter: Emitter;
+	emitter;
 	/**
 	 * The velocity of the particle. Speed may change, but the angle also
 	 * contained in velocity is constant.
 	 */
-	public velocity: Point;
+	velocity;
 	/**
 	 * The maximum lifetime of this particle, in seconds.
 	 */
-	public maxLife: number;
+	maxLife;
 	/**
 	 * The current age of the particle, in seconds.
 	 */
-	public age: number;
+	age;
 	/**
 	 * A simple easing function to be applied to all properties that
 	 * are being interpolated.
 	 */
-	public ease: SimpleEase;
+	ease;
 	/**
 	 * Extra data that the emitter passes along for custom particles.
 	 */
-	public extraData: any;
+	extraData;
 	/**
 	 * The alpha of the particle throughout its life.
 	 */
-	public alphaList: PropertyList<number>;
+	alphaList;
 	/**
 	 * The speed of the particle throughout its life.
 	 */
-	public speedList: PropertyList<number>;
+	speedList;
 	/**
 	 * A multiplier from 0-1 applied to the speed of the particle at all times.
 	 */
-	public speedMultiplier: number;
+	speedMultiplier;
 	/**
 	 * Acceleration to apply to the particle.
 	 */
-	public acceleration: Point;
+	acceleration;
 	/**
 	 * The maximum speed allowed for accelerating particles. Negative values, values of 0 or NaN
 	 * will disable the maximum speed.
 	 */
-	public maxSpeed: number;
+	maxSpeed;
 	/**
 	 * Speed at which the particle rotates, in radians per second.
 	 */
-	public rotationSpeed: number;
+	rotationSpeed;
 
 	/**
 	 * Acceleration of rotation (angular acceleration) to apply to the particle.
 	 */
-	public rotationAcceleration: number;
+	rotationAcceleration;
 
 	/**
 	 * If particle rotation is locked, preventing rotation from occurring due
 	 * to directional changes.
 	 */
-	public noRotation: boolean;
+	noRotation;
 	/**
 	 * The scale of the particle throughout its life.
 	 */
-	public scaleList: PropertyList<number>;
+	scaleList;
 	/**
 	 * A multiplier from 0-1 applied to the scale of the particle at all times.
 	 */
-	public scaleMultiplier: number;
+	scaleMultiplier;
 	/**
 	 * The tint of the particle throughout its life.
 	 */
-	public colorList: PropertyList<Color>;
+	colorList;
 	/**
 	 * A reference to init, so that subclasses can access it without the penalty of Function.call()
 	 */
-	protected Particle_init: typeof Particle.prototype.init;
+	Particle_init;
 	/**
 	 * A reference to update so that subclasses can access the original without the overhead
 	 * of Function.call().
@@ -93,53 +103,53 @@ export class Particle extends Sprite
 	 * @return The standard interpolation multiplier (0-1) used for all relevant particle
 	 *                   properties. A value of -1 means the particle died of old age instead.
 	 */
-	protected Particle_update: typeof Particle.prototype.update;
-	protected Particle_destroy: typeof Particle.prototype.destroy;
-	protected Sprite_destroy: typeof Sprite.prototype.destroy;
+	Particle_update;
+	Particle_destroy;
+	Sprite_destroy;
 	/**
 	 * If alpha should be interpolated at all.
 	 */
-	protected _doAlpha: boolean;
+	_doAlpha;
 	/**
 	 * If scale should be interpolated at all.
 	 */
-	protected _doScale: boolean;
+	_doScale;
 	/**
 	 * If speed should be interpolated at all.
 	 */
-	protected _doSpeed: boolean;
+	_doSpeed;
 	/**
 	 * If acceleration should be handled at all. _doSpeed is mutually exclusive with this,
 	 * and _doSpeed gets priority.
 	 */
-	protected _doAcceleration: boolean;
+	_doAcceleration;
 	/**
 	 * If color should be interpolated at all.
 	 */
-	protected _doColor: boolean;
+	_doColor;
 	/**
 	 * If normal movement should be handled. Subclasses wishing to override movement
 	 * can set this to false in init().
 	 */
-	protected _doNormalMovement: boolean;
+	_doNormalMovement;
 	/**
 	 * One divided by the max life of the particle, saved for slightly faster math.
 	 */
-	private _oneOverLife: number;
+	_oneOverLife;
 	/**
 	 * Reference to the next particle in the list.
 	 */
-	public next: Particle;
+	next;
 
 	/**
 	 * Reference to the previous particle in the list.
 	 */
-	public prev: Particle;
+	prev;
 
 	/**
 	 * @param {PIXI.particles.Emitter} emitter The emitter that controls this particle.
 	 */
-	constructor(emitter: Emitter)
+	constructor(emitter)
 	{
 		//start off the sprite with a blank texture, since we are going to replace it
 		//later when the particle is initialized.
@@ -187,14 +197,14 @@ export class Particle extends Sprite
 	 * Initializes the particle for use, based on the properties that have to
 	 * have been set already on the particle.
 	 */
-	public init()
+	init()
 	{
 		//reset the age
 		this.age = 0;
 		//set up the velocity based on the start speed and rotation
 		this.velocity.x = this.speedList.current.value * this.speedMultiplier;
 		this.velocity.y = 0;
-		ParticleUtils.rotatePoint(this.rotation, this.velocity);
+		rotatePoint(this.rotation, this.velocity);
 		if (this.noRotation)
 		{
 			this.rotation = 0;
@@ -202,11 +212,11 @@ export class Particle extends Sprite
 		else
 		{
 			//convert rotation to Radians from Degrees
-			this.rotation *= ParticleUtils.DEG_TO_RADS;
+			this.rotation *= DEG_TO_RADS;
 		}
 		//convert rotation speed to Radians from Degrees
-		this.rotationSpeed *= ParticleUtils.DEG_TO_RADS;
-		this.rotationAcceleration *= ParticleUtils.DEG_TO_RADS;
+		this.rotationSpeed *= DEG_TO_RADS;
+		this.rotationAcceleration *= DEG_TO_RADS;
 
 		//set alpha to inital alpha
 		this.alpha = this.alphaList.current.value;
@@ -224,7 +234,7 @@ export class Particle extends Sprite
 		this._oneOverLife = 1 / this.maxLife;
 		//set the inital color
 		let color = this.colorList.current.value;
-		this.tint = ParticleUtils.combineRGBComponents(color.r, color.g, color.b);
+		this.tint = combineRGBComponents(color.r, color.g, color.b);
 		//ensure visibility
 		this.visible = true;
 	}
@@ -234,7 +244,7 @@ export class Particle extends Sprite
 	 * for an animated particle.
 	 * @param art The texture to set.
 	 */
-	public applyArt(art: any)
+	applyArt(art)
 	{
 		this.texture = art || Texture.EMPTY;
 	}
@@ -246,7 +256,7 @@ export class Particle extends Sprite
 	 *         relevant particle properties. A value of -1 means the particle
 	 *         died of old age instead.
 	 */
-	public update(delta: number): number
+	update(delta)
 	{
 		//increase age
 		this.age += delta;
@@ -287,14 +297,14 @@ export class Particle extends Sprite
 		//handle movement
 		if(this._doNormalMovement)
 		{
-			let deltaX:number;
-			let deltaY:number;
+			let deltaX;
+			let deltaY;
 			//interpolate speed
 			if (this._doSpeed)
 			{
 				let speed = this.speedList.interpolate(lerp) * this.speedMultiplier;
-				ParticleUtils.normalize(this.velocity);
-				ParticleUtils.scaleBy(this.velocity, speed);
+				normalize(this.velocity);
+				scaleBy(this.velocity, speed);
 				deltaX = this.velocity.x * delta;
 				deltaY = this.velocity.y * delta;
 			}
@@ -306,12 +316,12 @@ export class Particle extends Sprite
 				this.velocity.y += this.acceleration.y * delta;
 				if (this.maxSpeed)
 				{
-					let currentSpeed = ParticleUtils.length(this.velocity);
+					let currentSpeed = length(this.velocity);
 					//if we are going faster than we should, clamp at the max speed
 					//DO NOT recalculate vector length
 					if (currentSpeed > this.maxSpeed)
 					{
-						ParticleUtils.scaleBy(this.velocity, this.maxSpeed / currentSpeed);
+						scaleBy(this.velocity, this.maxSpeed / currentSpeed);
 					}
 				}
 				// calculate position delta by the midpoint between our old velocity and our new velocity
@@ -355,7 +365,7 @@ export class Particle extends Sprite
 	 * Kills the particle, removing it from the display list
 	 * and telling the emitter to recycle it.
 	 */
-	public kill()
+	kill()
 	{
 		this.emitter.recycle(this);
 	}
@@ -363,7 +373,7 @@ export class Particle extends Sprite
 	/**
 	 * Destroys the particle, removing references and preventing future use.
 	 */
-	public destroy()
+	destroy()
 	{
 		if (this.parent)
 			this.parent.removeChild(this);
@@ -380,7 +390,7 @@ export class Particle extends Sprite
 	 *            Textures via Texture.from().
 	 * @return The art, after any needed modifications.
 	 */
-	public static parseArt(art:any[]): any[]
+	static parseArt(art)
 	{
 		//convert any strings to Textures.
 		let i;
@@ -413,7 +423,7 @@ export class Particle extends Sprite
 	 * @param extraData The extra data from the particle config.
 	 * @return The parsed extra data.
 	 */
-	public static parseData(extraData: any): any
+	static parseData(extraData)
 	{
 		return extraData;
 	}

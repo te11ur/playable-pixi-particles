@@ -1,21 +1,22 @@
+import {Texture} from "../pixi.js/packages/core/src/textures/Texture";
+
 import {Particle} from "./Particle";
 import {Emitter} from "./Emitter";
 import {GetTextureFromString} from "./ParticleUtils";
-import {Texture} from "pixi.js";
 
-export interface ParsedAnimatedParticleArt
+export class ParsedAnimatedParticleArt
 {
-	textures: Texture[];
-	duration: number;
-	framerate: number;
-	loop: boolean;
+	textures;
+	duration;
+	framerate;
+	loop;
 }
 
-export interface AnimatedParticleArt
+export class AnimatedParticleArt
 {
-	framerate: "matchLife"|number;
-	loop?: boolean;
-	textures: (string|Texture|{texture:string|Texture,count:number})[];
+	framerate = 'matchLife';
+	loop;
+	textures;
 }
 
 /**
@@ -54,32 +55,32 @@ export class AnimatedParticle extends Particle
 	/**
 	 * Texture array used as each frame of animation, similarly to how MovieClip works.
 	 */
-	private textures: Texture[];
+	textures;
 
 	/**
 	 * Duration of the animation, in seconds.
 	 */
-	private duration: number;
+	duration;
 
 	/**
 	 * Animation framerate, in frames per second.
 	 */
-	private framerate: number;
+	framerate;
 
 	/**
 	 * Animation time elapsed, in seconds.
 	 */
-	private elapsed: number;
+	elapsed;
 
 	/**
 	 * If this particle animation should loop.
 	 */
-	private loop: boolean;
+	loop;
 	
 	/**
-	 * @param emitter The emitter that controls this AnimatedParticle.
+	 * @param emitter {Emitter} The emitter that controls this AnimatedParticle.
 	 */
-	constructor(emitter: Emitter)
+	constructor(emitter)
 	{
 		super(emitter);
 
@@ -94,7 +95,7 @@ export class AnimatedParticle extends Particle
 	 * Initializes the particle for use, based on the properties that have to
 	 * have been set already on the particle.
 	 */
-	public init()
+	init()
 	{
 		this.Particle_init();
 
@@ -110,9 +111,9 @@ export class AnimatedParticle extends Particle
 
 	/**
 	 * Sets the textures for the particle.
-	 * @param art An array of PIXI.Texture objects for this animated particle.
+	 * @param art {ParsedAnimatedParticleArt} An array of PIXI.Texture objects for this animated particle.
 	 */
-	public applyArt(art: ParsedAnimatedParticleArt)
+	applyArt(art)
 	{
 		this.textures = art.textures;
 		this.framerate = art.framerate;
@@ -122,9 +123,9 @@ export class AnimatedParticle extends Particle
 
 	/**
 	 * Updates the particle.
-	 * @param delta Time elapsed since the previous frame, in __seconds__.
+	 * @param delta {number} Time elapsed since the previous frame, in __seconds__.
 	 */
-	public update(delta: number): number
+	update(delta)
 	{
 		const lerp = this.Particle_update(delta);
 		//only animate the particle if it is still alive
@@ -151,7 +152,7 @@ export class AnimatedParticle extends Particle
 	/**
 	 * Destroys the particle, removing references and preventing future use.
 	 */
-	public destroy()
+	destroy()
 	{
 		this.Particle_destroy();
 		this.textures = null;
@@ -160,13 +161,13 @@ export class AnimatedParticle extends Particle
 	/**
 	 * Checks over the art that was passed to the Emitter's init() function, to do any special
 	 * modifications to prepare it ahead of time.
-	 * @param art The array of art data, properly formatted for AnimatedParticle.
+	 * @param art {AnimatedParticleArt[]} The array of art data, properly formatted for AnimatedParticle.
 	 * @return The art, after any needed modifications.
 	 */
-	public static parseArt(art: AnimatedParticleArt[])
+	static parseArt(art)
 	{
-		let data, output: any, textures, tex, outTextures;
-		let outArr:ParsedAnimatedParticleArt[] = [];
+		let data, output, textures, tex, outTextures;
+		let outArr = [];
 		for(let i = 0; i < art.length; ++i)
 		{
 			data = art[i];
