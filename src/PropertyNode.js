@@ -1,3 +1,5 @@
+import {hexToRGB} from "./ParticleUtils";
+
 export class ValueStep {
 	value;
 	time;

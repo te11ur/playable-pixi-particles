@@ -95,7 +95,7 @@ export function length(point) {
  */
 export function hexToRGB(color, output) {
     if (!output) {
-        output = {} as Color;
+        output = {};
     }
     if (color.charAt(0) == "#") {
         color = color.substr(1);

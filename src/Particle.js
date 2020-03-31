@@ -9,7 +9,7 @@ import {
 	normalize,
 	rotatePoint,
 	scaleBy,
-	length
+	length, verbose
 } from "./ParticleUtils";
 import {PropertyList} from "./PropertyList";
 
@@ -183,14 +183,10 @@ export class Particle extends Sprite
 		this.prev = null;
 
 		//save often used functions on the instance instead of the prototype for better speed
-		this.init = this.init;
 		this.Particle_init = Particle.prototype.init;
-		this.update = this.update;
 		this.Particle_update = Particle.prototype.update;
 		this.Sprite_destroy = super.destroy;
 		this.Particle_destroy = Particle.prototype.destroy;
-		this.applyArt = this.applyArt;
-		this.kill = this.kill;
 	}
 
 	/**
@@ -271,11 +267,11 @@ export class Particle extends Sprite
 		let lerp = this.age * this._oneOverLife;//lifetime / maxLife;
 		if (this.ease)
 		{
-			if(this.ease.length == 4)
+			if(this.ease.length === 4)
 			{
 				//the t, b, c, d parameters that some tween libraries use
 				//(time, initial value, end value, duration)
-				lerp = (this.ease as any)(lerp, 0, 1, 1);
+				lerp = this.ease(lerp, 0, 1, 1);
 			}
 			else
 			{
@@ -401,7 +397,7 @@ export class Particle extends Sprite
 		}
 		//particles from different base textures will be slower in WebGL than if they
 		//were from one spritesheet
-		if(ParticleUtils.verbose)
+		if(verbose)
 		{
 			for(i = art.length - 1; i > 0; --i)
 			{
