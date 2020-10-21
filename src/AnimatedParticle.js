@@ -76,7 +76,7 @@ export class AnimatedParticle extends Particle
 	 * If this particle animation should loop.
 	 */
 	loop;
-	
+
 	/**
 	 * @param emitter {Emitter} The emitter that controls this AnimatedParticle.
 	 */
@@ -171,7 +171,7 @@ export class AnimatedParticle extends Particle
 		for(let i = 0; i < art.length; ++i)
 		{
 			data = art[i];
-			outArr[i] = output = {} as ParsedAnimatedParticleArt;
+			outArr[i] = output = {};
 			output.textures = outTextures = [];
 			textures = data.textures;
 			for(let j = 0; j < textures.length; ++j)
